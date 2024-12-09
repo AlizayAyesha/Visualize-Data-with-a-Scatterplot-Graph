@@ -1,0 +1,179 @@
+<!-- 
+
+Hello Camper!
+
+Please read the README below in the JS Editor before beginning. Feel free to delete this message once you have read it. Good luck and Happy Coding! 
+
+- The freeCodeCamp Team 
+
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scatter Plot</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    svg {
+      margin: auto;
+      display: block;
+    }
+
+    .dot {
+      stroke: black;
+      stroke-width: 0.5;
+    }
+
+    #tooltip {
+      position: absolute;
+      background: white;
+      border: 1px solid black;
+      padding: 5px;
+      display: none;
+      font-size: 12px;
+    }
+
+    #legend {
+      font-size: 14px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="title">Doping in Professional Bicycle Racing</h1>
+  <div id="tooltip"></div>
+  <svg id="chart"></svg>
+  <script>
+    const datasetURL = "https://raw.githubusercontent.com/freeCodeCamp/ProjectReferenceData/master/cyclist-data.json";
+
+    // Fetch dataset and render the chart
+    fetch(datasetURL)
+      .then(response => response.json())
+      .then(data => createChart(data));
+
+    function createChart(data) {
+      const width = 800;
+      const height = 500;
+      const padding = 60;
+
+      // Parse the time data
+      data.forEach(d => {
+        const parsedTime = d.Time.split(":");
+        d.Time = new Date(1970, 0, 1, 0, parsedTime[0], parsedTime[1]);
+      });
+
+      // Scales
+      const xScale = d3
+        .scaleTime()
+        .domain(d3.extent(data, d => new Date(d.Year, 0, 1)))
+        .range([padding, width - padding]);
+
+      const yScale = d3
+        .scaleTime()
+        .domain(d3.extent(data, d => d.Time))
+        .range([padding, height - padding]);
+
+      // SVG container
+      const svg = d3
+        .select("#chart")
+        .attr("width", width)
+        .attr("height", height);
+
+      // X-Axis
+      const xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y"));
+      svg
+        .append("g")
+        .attr("id", "x-axis")
+        .attr("transform", `translate(0, ${height - padding})`)
+        .call(xAxis);
+
+      // Y-Axis
+      const yAxis = d3.axisLeft(yScale).tickFormat(d3.timeFormat("%M:%S"));
+      svg
+        .append("g")
+        .attr("id", "y-axis")
+        .attr("transform", `translate(${padding}, 0)`)
+        .call(yAxis);
+
+      // Tooltip
+      const tooltip = d3.select("#tooltip");
+
+      // Dots
+      svg
+        .selectAll(".dot")
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => xScale(new Date(d.Year, 0, 1)))
+        .attr("cy", d => yScale(d.Time))
+        .attr("r", 6)
+        .attr("data-xvalue", d => d.Year)
+        .attr("data-yvalue", d => d.Time.toISOString())
+        .attr("fill", d => (d.Doping ? "red" : "green"))
+        .on("mouseover", (event, d) => {
+          tooltip
+            .style("left", `${event.pageX + 10}px`)
+            .style("top", `${event.pageY - 30}px`)
+            .style("display", "block")
+            .attr("data-year", d.Year)
+            .html(
+              `<strong>${d.Name}</strong>: ${d.Nationality}<br>
+              Year: ${d.Year}, Time: ${d3.timeFormat("%M:%S")(d.Time)}<br>
+              ${d.Doping ? d.Doping : "No doping allegations"}`
+            );
+        })
+        .on("mouseout", () => tooltip.style("display", "none"));
+
+      // Legend
+      const legend = svg
+        .append("g")
+        .attr("id", "legend")
+        .attr("transform", `translate(${width - 200}, ${padding})`);
+
+      legend
+        .append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 150)
+        .attr("height", 50)
+        .attr("fill", "white")
+        .attr("stroke", "black");
+
+      legend
+        .append("circle")
+        .attr("cx", 10)
+        .attr("cy", 15)
+        .attr("r", 6)
+        .attr("fill", "green");
+
+      legend
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 18)
+        .text("No doping allegations");
+
+      legend
+        .append("circle")
+        .attr("cx", 10)
+        .attr("cy", 35)
+        .attr("r", 6)
+        .attr("fill", "red");
+
+      legend
+        .append("text")
+        .attr("x", 20)
+        .attr("y", 38)
+        .text("Riders with doping allegations");
+    }
+  </script>
+</body>
+</html>
+
